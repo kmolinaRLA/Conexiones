@@ -1,0 +1,28 @@
+{
+  "name": "conexiones",
+  "version": "1.0.0",
+  "description": "Monitor de conexiones de servidores y MPLS",
+  "main": "index.js",
+  "scripts": {
+    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "start:backend": "cd ./server-monitor-backend && npm run dev",
+    "start:frontend": "cd ./server-monitor-frontend && npm start",
+    "start:backend-only": "cd server-monitor-backend && npm run dev",
+    "start:frontend-only": "cd server-monitor-frontend && npm start",
+    "install:all": "npm install && cd server-monitor-backend && npm install && cd ../server-monitor-frontend && npm install",
+    "build": "cd server-monitor-frontend && npm run build"
+  },
+  "keywords": [
+    "monitor",
+    "servers",
+    "mpls",
+    "react",
+    "node"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.11",
+    "concurrently": "^8.2.2"
+  }
+}

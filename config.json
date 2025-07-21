@@ -1,0 +1,86 @@
+{
+  "monitoring": {
+    "updateInterval": 30000,
+    "connectionTimeout": 5000,
+    "latencyThresholds": {
+      "good": 100,
+      "warning": 300
+    }
+  },
+  "servers": [
+    {
+      "id": "localhost",
+      "name": "Servidor Local (Demo)",
+      "ip": "127.0.0.1",
+      "services": [
+        { "name": "Backend API", "port": 3001, "type": "HTTP" },
+        { "name": "SSH", "port": 22, "type": "SSH" }
+      ]
+    },
+    {
+      "id": "server1",
+      "name": "Servidor Principal",
+      "ip": "192.168.1.100",
+      "services": [
+        { "name": "Web Server", "port": 80, "type": "HTTP" },
+        { "name": "Database", "port": 3306, "type": "MySQL" },
+        { "name": "SSH", "port": 22, "type": "SSH" },
+        { "name": "FTP", "port": 21, "type": "FTP" }
+      ]
+    },
+    {
+      "id": "server2",
+      "name": "Servidor Backup",
+      "ip": "192.168.1.101",
+      "services": [
+        { "name": "Web Server", "port": 80, "type": "HTTP" },
+        { "name": "Email Server", "port": 25, "type": "SMTP" },
+        { "name": "DNS", "port": 53, "type": "DNS" }
+      ]
+    }
+  ],
+  "mpls": [
+    {
+      "id": "antioquia",
+      "name": "Antioquia",
+      "ip": "10.1.1.1",
+      "port": 443,
+      "location": "Medellín"
+    },
+    {
+      "id": "cundinamarca",
+      "name": "Cundinamarca",
+      "ip": "10.1.2.1",
+      "port": 443,
+      "location": "Bogotá"
+    },
+    {
+      "id": "valle",
+      "name": "Valle del Cauca",
+      "ip": "10.1.3.1",
+      "port": 443,
+      "location": "Cali"
+    },
+    {
+      "id": "atlantico",
+      "name": "Atlántico",
+      "ip": "10.1.4.1",
+      "port": 443,
+      "location": "Barranquilla"
+    },
+    {
+      "id": "santander",
+      "name": "Santander",
+      "ip": "10.1.5.1",
+      "port": 443,
+      "location": "Bucaramanga"
+    },
+    {
+      "id": "bolivar",
+      "name": "Bolívar",
+      "ip": "10.1.6.1",
+      "port": 443,
+      "location": "Cartagena"
+    }
+  ]
+}
