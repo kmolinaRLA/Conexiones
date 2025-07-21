@@ -11,6 +11,31 @@ const PORT = 3001;
 app.use(cors());
 app.use(express.json());
 
+// Almacenamiento en memoria para métricas históricas
+const metricsHistory = {
+  servers: new Map(),
+  mpls: new Map()
+};
+
+// Función para agregar métrica histórica
+const addMetricToHistory = (type, id, metric) => {
+  const key = `${type}-${id}`;
+  if (!metricsHistory[type].has(key)) {
+    metricsHistory[type].set(key, []);
+  }
+  
+  const history = metricsHistory[type].get(key);
+  history.push({
+    timestamp: new Date(),
+    ...metric
+  });
+  
+  // Mantener solo las últimas 100 entradas (aprox. 50 minutos)
+  if (history.length > 100) {
+    history.shift();
+  }
+};
+
 // Cargar configuración desde archivo
 let serversConfig;
 try {
@@ -29,15 +54,15 @@ try {
   serversConfig = {
     servers: [
       {
-        id: 'Servidor Conexion SAP Hanna',
-        name: 'Servidor de conexion applicaciones SAP',
+        id: 'servidor-sap-hanna',
+        name: 'Servidor de conexión aplicaciones SAP',
         ip: '10.238.83.84',
         services: [
-          { name: 'Conexion SAP', port: 30015, type: 'HTTP' },
+          { name: 'Conexión SAP', port: 30015, type: 'SAP' },
         ]
       },
       {
-        id: 'Servidor RLABOGS-DB02',
+        id: 'servidor-rlabogs-db02',
         name: 'Servidor RLABOGS-DB02',
         ip: '10.10.1.252',
         services: [
@@ -48,119 +73,118 @@ try {
         ]
       },
       {
-        id: 'Servidor RLABOGS-APP',
+        id: 'servidor-rlabogs-app',
         name: 'Servidor RLABOGS-APP',
         ip: '10.238.83.86',
         services: [
           { name: 'Portal Empleados', port: 8081, type: 'HTTP' },
-          { name: 'Synergy', port: 443, type: 'HTTP' },
-
+          { name: 'Synergy', port: 443, type: 'HTTPS' },
         ]
       },
       {
-        id: 'Servidor de Impresion',
-        name: 'Servidor de Impresion',
+        id: 'servidor-impresion',
+        name: 'Servidor de Impresión',
         ip: '10.10.0.30',
         services: [
-          { name: 'Servicio de Impresion', port: 631, type: 'TCP' },
+          { name: 'Servicio de Impresión', port: 631, type: 'TCP' },
         ]
       }
     ],
     mpls: [
       {
-        id: 'Bogotá',
-        name: 'Bogotá',
+        id: 'bogota',
+        name: 'Bogotá Principal',
         ip: '10.10.40.1',
         port: 443,
         location: 'Bogotá'
       },
       {
-        id: 'San Felipe',
+        id: 'san-felipe',
         name: 'San Felipe',
         ip: '10.10.41.1',
         port: 443,
         location: 'Bogotá Sede 2'
       },
       {
-        id: 'Santander',
+        id: 'santander',
         name: 'Santander',
         ip: '10.10.103.1',
         port: 443,
         location: 'Bucaramanga'
       },
       {
-        id: 'Valle del Cauca',
+        id: 'valle-del-cauca',
         name: 'Valle del Cauca',
         ip: '10.10.104.1',
         port: 443,
         location: 'Cali'
       },
       {
-        id: 'Antioquia',
+        id: 'antioquia',
         name: 'Antioquia',
         ip: '10.10.105.1',
         port: 443,
         location: 'Medellín'
       },
       {
-        id: 'Nariño',
+        id: 'narino',
         name: 'Nariño',
         ip: '10.10.106.1',
         port: 443,
         location: 'Pasto'
       },
       {
-        id: 'Risaralda',
+        id: 'risaralda',
         name: 'Risaralda',
         ip: '10.10.107.1',
         port: 443,
         location: 'Pereira'
       },
       {
-        id: 'Bolívar',
+        id: 'bolivar',
         name: 'Bolívar',
         ip: '10.10.109.1',
         port: 443,
         location: 'Cartagena'
       },
       {
-        id: 'Caquetá',
+        id: 'caqueta',
         name: 'Caquetá',
         ip: '10.10.110.1',
         port: 443,
         location: 'Florencia'
       },
       {
-        id: 'Tolima',
+        id: 'tolima',
         name: 'Tolima',
         ip: '10.10.220.1',
         port: 443,
-        location: 'Ibague'
+        location: 'Ibagué'
       },
       {
-        id: 'Putumayo',
+        id: 'putumayo',
         name: 'Putumayo',
         ip: '10.10.112.1',
         port: 443,
         location: 'Mocoa'
       },
       {
-        id: 'Huila',
+        id: 'huila',
         name: 'Huila',
         ip: '10.10.113.1',
         port: 443,
         location: 'Neiva'
       },
       {
-        id: 'Meta',
+        id: 'meta',
         name: 'Meta',
         ip: '10.10.119.1',
         port: 443,
         location: 'Villavicencio'
       },
       {
-        id: 'Atlantico',
-        name: 'Atlantico',
+        id: 'atlantico',
+        name: 'Atlántico',
         ip: '10.10.120.1',
         port: 443,
         location: 'Barranquilla'
@@ -175,7 +199,9 @@ try {
       }
     }
   };
-}// Función para verificar conectividad y latencia
+}
+
+// Función para verificar conectividad y latencia
 const checkConnection = (ip, port, timeout = serversConfig.monitoring?.connectionTimeout || 5000) => {
   return new Promise((resolve) => {
     const startTime = performance.now();
@@ -218,9 +244,9 @@ const checkConnection = (ip, port, timeout = serversConfig.monitoring?.connectio
 // Función para determinar el estado basado en la latencia
 const getStatusByLatency = (latency) => {
   const thresholds = serversConfig.monitoring?.latencyThresholds || { good: 100, warning: 300 };
-  if (latency < thresholds.good) return 'green';      // Verde
-  if (latency < thresholds.warning) return 'yellow';   // Amarillo
-  return 'red';                        // Rojo
+  if (latency < thresholds.good) return 'green';
+  if (latency < thresholds.warning) return 'yellow';
+  return 'red';
 };
 
 // Endpoint para obtener el estado de todos los servidores
@@ -231,6 +257,14 @@ app.get('/api/servers/status', async (req, res) => {
         const servicesStatus = await Promise.all(
           server.services.map(async (service) => {
             const result = await checkConnection(server.ip, service.port);
+            
+            // Agregar métrica histórica para el servicio
+            addMetricToHistory('servers', `${server.id}-${service.name}`, {
+              latency: result.latency,
+              status: result.statusCode,
+              service: service.name
+            });
+            
             return {
               name: service.name,
               type: service.type,
@@ -254,6 +288,14 @@ app.get('/api/servers/status', async (req, res) => {
           ? Math.round(validLatencies.reduce((a, b) => a + b, 0) / validLatencies.length)
           : null;
         
+        // Agregar métrica histórica para el servidor
+        addMetricToHistory('servers', server.id, {
+          latency: avgLatency,
+          status: overallStatus,
+          servicesCount: servicesStatus.length,
+          operationalServices: servicesStatus.filter(s => s.status === 'green').length
+        });
+        
         return {
           id: server.id,
           name: server.name,
@@ -267,6 +309,7 @@ app.get('/api/servers/status', async (req, res) => {
     
     res.json(serversStatus);
   } catch (error) {
+    console.error('Error al verificar servidores:', error);
     res.status(500).json({ error: 'Error al verificar servidores' });
   }
 });
@@ -277,6 +320,14 @@ app.get('/api/mpls/status', async (req, res) => {
     const mplsStatus = await Promise.all(
       serversConfig.mpls.map(async (mpls) => {
         const result = await checkConnection(mpls.ip, mpls.port);
+        
+        // Agregar métrica histórica para MPLS
+        addMetricToHistory('mpls', mpls.id, {
+          latency: result.latency,
+          status: result.statusCode,
+          location: mpls.location
+        });
+        
         return {
           id: mpls.id,
           name: mpls.name,
@@ -289,11 +340,125 @@ app.get('/api/mpls/status', async (req, res) => {
     
     res.json(mplsStatus);
   } catch (error) {
+    console.error('Error al verificar MPLS:', error);
     res.status(500).json({ error: 'Error al verificar MPLS' });
   }
 });
 
-// Endpoint para actualizar configuración de servidores
+// Endpoint para obtener métricas históricas
+app.get('/api/metrics/:type/:id', (req, res) => {
+  try {
+    const { type, id } = req.params;
+    const { timeRange = '1h' } = req.query;
+    
+    if (!['servers', 'mpls'].includes(type)) {
+      return res.status(400).json({ error: 'Tipo inválido' });
+    }
+    
+    const key = `${type}-${id}`;
+    const history = metricsHistory[type].get(key) || [];
+    
+    // Filtrar por rango de tiempo
+    let filteredHistory = history;
+    const now = new Date();
+    
+    switch (timeRange) {
+      case '15m':
+        filteredHistory = history.filter(h => now - h.timestamp <= 15 * 60 * 1000);
+        break;
+      case '1h':
+        filteredHistory = history.filter(h => now - h.timestamp <= 60 * 60 * 1000);
+        break;
+      case '6h':
+        filteredHistory = history.filter(h => now - h.timestamp <= 6 * 60 * 60 * 1000);
+        break;
+      case '24h':
+        filteredHistory = history.filter(h => now - h.timestamp <= 24 * 60 * 60 * 1000);
+        break;
+    }
+    
+    res.json({
+      id,
+      type,
+      timeRange,
+      data: filteredHistory,
+      summary: {
+        totalPoints: filteredHistory.length,
+        avgLatency: filteredHistory.length > 0 
+          ? Math.round(filteredHistory.reduce((acc, curr) => acc + (curr.latency || 0), 0) / filteredHistory.length)
+          : 0,
+        maxLatency: filteredHistory.length > 0 
+          ? Math.max(...filteredHistory.map(h => h.latency || 0))
+          : 0,
+        minLatency: filteredHistory.length > 0 
+          ? Math.min(...filteredHistory.filter(h => h.latency !== null).map(h => h.latency))
+          : 0,
+        uptime: filteredHistory.length > 0 
+          ? Math.round((filteredHistory.filter(h => h.status === 'green').length / filteredHistory.length) * 100)
+          : 0
+      }
+    });
+  } catch (error) {
+    console.error('Error al obtener métricas:', error);
+    res.status(500).json({ error: 'Error al obtener métricas' });
+  }
+});
+
+// Endpoint para obtener resumen de métricas de todos los elementos
+app.get('/api/metrics/summary', (req, res) => {
+  try {
+    const summary = {
+      servers: [],
+      mpls: []
+    };
+    
+    // Resumen de servidores
+    serversConfig.servers.forEach(server => {
+      const key = `servers-${server.id}`;
+      const history = metricsHistory.servers.get(key) || [];
+      const recent = history.slice(-10); // Últimos 10 puntos
+      
+      summary.servers.push({
+        id: server.id,
+        name: server.name,
+        currentStatus: recent.length > 0 ? recent[recent.length - 1].status : 'unknown',
+        avgLatency: recent.length > 0 
+          ? Math.round(recent.reduce((acc, curr) => acc + (curr.latency || 0), 0) / recent.length)
+          : 0,
+        uptime: recent.length > 0 
+          ? Math.round((recent.filter(h => h.status === 'green').length / recent.length) * 100)
+          : 0
+      });
+    });
+    
+    // Resumen de MPLS
+    serversConfig.mpls.forEach(mpls => {
+      const key = `mpls-${mpls.id}`;
+      const history = metricsHistory.mpls.get(key) || [];
+      const recent = history.slice(-10);
+      
+      summary.mpls.push({
+        id: mpls.id,
+        name: mpls.name,
+        location: mpls.location,
+        currentStatus: recent.length > 0 ? recent[recent.length - 1].status : 'unknown',
+        avgLatency: recent.length > 0 
+          ? Math.round(recent.reduce((acc, curr) => acc + (curr.latency || 0), 0) / recent.length)
+          : 0,
+        uptime: recent.length > 0 
+          ? Math.round((recent.filter(h => h.status === 'green').length / recent.length) * 100)
+          : 0
+      });
+    });
+    
+    res.json(summary);
+  } catch (error) {
+    console.error('Error al obtener resumen de métricas:', error);
+    res.status(500).json({ error: 'Error al obtener resumen de métricas' });
+  }
+});
+
+// Resto de endpoints...
 app.post('/api/config/servers', (req, res) => {
   try {
     serversConfig.servers = req.body;
@@ -303,7 +468,6 @@ app.post('/api/config/servers', (req, res) => {
   }
 });
 
-// Endpoint para actualizar configuración de MPLS
 app.post('/api/config/mpls', (req, res) => {
   try {
     serversConfig.mpls = req.body;
@@ -313,12 +477,10 @@ app.post('/api/config/mpls', (req, res) => {
   }
 });
 
-// Endpoint para obtener configuración actual
 app.get('/api/config', (req, res) => {
   res.json(serversConfig);
 });
 
-// Endpoint de salud
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
@@ -326,6 +488,8 @@ app.get('/api/health', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Servidor backend ejecutándose en puerto ${PORT}`);
   console.log(`API disponible en: http://localhost:${PORT}/api`);
+  console.log(`Servidores configurados: ${serversConfig.servers.length}`);
+  console.log(`MPLS configurados: ${serversConfig.mpls.length}`);
 });
 
 module.exports = app;
