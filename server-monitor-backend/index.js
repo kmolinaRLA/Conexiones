@@ -29,88 +29,141 @@ try {
   serversConfig = {
     servers: [
       {
-        id: 'localhost',
-        name: 'Servidor Local (Demo)',
-        ip: '127.0.0.1',
+        id: 'Servidor Conexion SAP Hanna',
+        name: 'Servidor de conexion applicaciones SAP',
+        ip: '10.238.83.84',
         services: [
-          { name: 'Backend API', port: 3001, type: 'HTTP' },
-          { name: 'SSH', port: 22, type: 'SSH' }
+          { name: 'Conexion SAP', port: 30015, type: 'HTTP' },
         ]
       },
       {
-        id: 'server1',
-        name: 'Servidor Principal',
-        ip: '192.168.1.100',
+        id: 'Servidor RLABOGS-DB02',
+        name: 'Servidor RLABOGS-DB02',
+        ip: '10.10.1.252',
         services: [
-          { name: 'Web Server', port: 80, type: 'HTTP' },
-          { name: 'Database', port: 3306, type: 'MySQL' },
-          { name: 'SSH', port: 22, type: 'SSH' },
-          { name: 'FTP', port: 21, type: 'FTP' }
+          { name: 'Afiliaciones', port: 27732, type: 'HTTP' },
+          { name: 'Payu', port: 8005, type: 'HTTP' },
+          { name: 'API', port: 37834, type: 'HTTP' },
+          { name: 'Portal Clientes', port: 8089, type: 'HTTP' }
         ]
       },
       {
-        id: 'server2',
-        name: 'Servidor Backup',
-        ip: '192.168.1.101',
+        id: 'Servidor RLABOGS-APP',
+        name: 'Servidor RLABOGS-APP',
+        ip: '10.238.83.86',
         services: [
-          { name: 'Web Server', port: 80, type: 'HTTP' },
-          { name: 'Email Server', port: 25, type: 'SMTP' },
-          { name: 'DNS', port: 53, type: 'DNS' }
+          { name: 'Portal Empleados', port: 8081, type: 'HTTP' },
+          { name: 'Synergy', port: 443, type: 'HTTP' },
+
         ]
       },
       {
-        id: 'server3',
-        name: 'Servidor Aplicaciones',
-        ip: '192.168.1.102',
+        id: 'Servidor de Impresion',
+        name: 'Servidor de Impresion',
+        ip: '10.10.0.30',
         services: [
-          { name: 'API Gateway', port: 8080, type: 'HTTP' },
-          { name: 'Redis Cache', port: 6379, type: 'Redis' },
-          { name: 'MongoDB', port: 27017, type: 'MongoDB' }
+          { name: 'Servicio de Impresion', port: 631, type: 'TCP' },
         ]
       }
     ],
     mpls: [
       {
-        id: 'antioquia',
-        name: 'Antioquia',
-        ip: '10.1.1.1',
-        port: 443,
-        location: 'Medellín'
-      },
-      {
-        id: 'cundinamarca',
-        name: 'Cundinamarca',
-        ip: '10.1.2.1',
+        id: 'Bogotá',
+        name: 'Bogotá',
+        ip: '10.10.40.1',
         port: 443,
         location: 'Bogotá'
       },
       {
-        id: 'valle',
-        name: 'Valle del Cauca',
-        ip: '10.1.3.1',
+        id: 'San Felipe',
+        name: 'San Felipe',
+        ip: '10.10.41.1',
         port: 443,
-        location: 'Cali'
+        location: 'Bogotá Sede 2'
       },
       {
-        id: 'atlantico',
-        name: 'Atlántico',
-        ip: '10.1.4.1',
-        port: 443,
-        location: 'Barranquilla'
-      },
-      {
-        id: 'santander',
+        id: 'Santander',
         name: 'Santander',
-        ip: '10.1.5.1',
+        ip: '10.10.103.1',
         port: 443,
         location: 'Bucaramanga'
       },
       {
-        id: 'bolivar',
+        id: 'Valle del Cauca',
+        name: 'Valle del Cauca',
+        ip: '10.10.104.1',
+        port: 443,
+        location: 'Cali'
+      },
+      {
+        id: 'Antioquia',
+        name: 'Antioquia',
+        ip: '10.10.105.1',
+        port: 443,
+        location: 'Medellín'
+      },
+      {
+        id: 'Nariño',
+        name: 'Nariño',
+        ip: '10.10.106.1',
+        port: 443,
+        location: 'Pasto'
+      },
+      {
+        id: 'Risaralda',
+        name: 'Risaralda',
+        ip: '10.10.107.1',
+        port: 443,
+        location: 'Pereira'
+      },
+      {
+        id: 'Bolívar',
         name: 'Bolívar',
-        ip: '10.1.6.1',
+        ip: '10.10.109.1',
         port: 443,
         location: 'Cartagena'
+      },
+      {
+        id: 'Caquetá',
+        name: 'Caquetá',
+        ip: '10.10.110.1',
+        port: 443,
+        location: 'Florencia'
+      },
+      {
+        id: 'Tolima',
+        name: 'Tolima',
+        ip: '10.10.220.1',
+        port: 443,
+        location: 'Ibague'
+      },
+      {
+        id: 'Putumayo',
+        name: 'Putumayo',
+        ip: '10.10.112.1',
+        port: 443,
+        location: 'Mocoa'
+      },
+      {
+        id: 'Huila',
+        name: 'Huila',
+        ip: '10.10.113.1',
+        port: 443,
+        location: 'Neiva'
+      },
+      {
+        id: 'Meta',
+        name: 'Meta',
+        ip: '10.10.119.1',
+        port: 443,
+        location: 'Villavicencio'
+      },
+      {
+        id: 'Atlantico',
+        name: 'Atlantico',
+        ip: '10.10.120.1',
+        port: 443,
+        location: 'Barranquilla'
       }
     ],
     monitoring: {
