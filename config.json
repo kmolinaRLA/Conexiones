@@ -53,6 +53,13 @@
         { "name": "Portal Empleados", "port": 8081, "type": "HTTP" },
         { "name": "Synergy", "port": 443, "type": "HTTPS" }
       ]
+    },{
+      "id": "servidor-238",
+      "name": "Servidor 238",
+      "ip": "10.10.1.238",
+      "services": [
+        { "name": "Api Produccion ", "port": 8090, "type": "API" }
+      ]
     },
     {
       "id": "servidor-impresion",
