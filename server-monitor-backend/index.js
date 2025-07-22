@@ -4,492 +4,402 @@ const net = require('net');
 const fs = require('fs');
 const path = require('path');
 const { performance } = require('perf_hooks');
+const { exec } = require('child_process');
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
 
-// Almacenamiento en memoria para métricas históricas
-const metricsHistory = {
-  servers: new Map(),
-  mpls: new Map()
-};
-
-// Función para agregar métrica histórica
-const addMetricToHistory = (type, id, metric) => {
-  const key = `${type}-${id}`;
-  if (!metricsHistory[type].has(key)) {
-    metricsHistory[type].set(key, []);
-  }
-  
-  const history = metricsHistory[type].get(key);
-  history.push({
-    timestamp: new Date(),
-    ...metric
-  });
-  
-  // Mantener solo las últimas 100 entradas (aprox. 50 minutos)
-  if (history.length > 100) {
-    history.shift();
-  }
-};
-
-// Cargar configuración desde archivo
-let serversConfig;
+// Cargar configuración
+let config;
 try {
-  const configPath = path.join(__dirname, '..', 'config.json');
-  const configData = fs.readFileSync(configPath, 'utf8');
-  const config = JSON.parse(configData);
-  serversConfig = {
-    servers: config.servers,
-    mpls: config.mpls,
-    monitoring: config.monitoring
-  };
-  console.log('Configuración cargada desde config.json');
+  const configPath = path.join(__dirname, '../config.json');
+  config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  console.log('✅ Configuración cargada:', config.servers.length, 'servidores,', config.mpls.length, 'MPLS');
 } catch (error) {
-  console.log('No se pudo cargar config.json, usando configuración por defecto');
-  // Configuración por defecto si no existe el archivo
-  serversConfig = {
-    servers: [
-      {
-        id: 'servidor-sap-hanna',
-        name: 'Servidor de conexión aplicaciones SAP',
-        ip: '10.238.83.84',
-        services: [
-          { name: 'Conexión SAP', port: 30015, type: 'SAP' },
-        ]
-      },
-      {
-        id: 'servidor-rlabogs-db02',
-        name: 'Servidor RLABOGS-DB02',
-        ip: '10.10.1.252',
-        services: [
-          { name: 'Afiliaciones', port: 27732, type: 'HTTP' },
-          { name: 'Payu', port: 8005, type: 'HTTP' },
-          { name: 'API', port: 37834, type: 'HTTP' },
-          { name: 'Portal Clientes', port: 8089, type: 'HTTP' }
-        ]
-      },
-      {
-        id: 'servidor-rlabogs-app',
-        name: 'Servidor RLABOGS-APP',
-        ip: '10.238.83.86',
-        services: [
-          { name: 'Portal Empleados', port: 8081, type: 'HTTP' },
-          { name: 'Synergy', port: 443, type: 'HTTPS' },
-        ]
-      },
-      {
-        id: 'servidor-impresion',
-        name: 'Servidor de Impresión',
-        ip: '10.10.0.30',
-        services: [
-          { name: 'Servicio de Impresión', port: 631, type: 'TCP' },
-        ]
-      }
-    ],
-    mpls: [
-      {
-        id: 'bogota',
-        name: 'Bogotá Principal',
-        ip: '10.10.40.1',
-        port: 443,
-        location: 'Bogotá'
-      },
-      {
-        id: 'san-felipe',
-        name: 'San Felipe',
-        ip: '10.10.41.1',
-        port: 443,
-        location: 'Bogotá Sede 2'
-      },
-      {
-        id: 'santander',
-        name: 'Santander',
-        ip: '10.10.103.1',
-        port: 443,
-        location: 'Bucaramanga'
-      },
-      {
-        id: 'valle-del-cauca',
-        name: 'Valle del Cauca',
-        ip: '10.10.104.1',
-        port: 443,
-        location: 'Cali'
-      },
-      {
-        id: 'antioquia',
-        name: 'Antioquia',
-        ip: '10.10.105.1',
-        port: 443,
-        location: 'Medellín'
-      },
-      {
-        id: 'narino',
-        name: 'Nariño',
-        ip: '10.10.106.1',
-        port: 443,
-        location: 'Pasto'
-      },
-      {
-        id: 'risaralda',
-        name: 'Risaralda',
-        ip: '10.10.107.1',
-        port: 443,
-        location: 'Pereira'
-      },
-      {
-        id: 'bolivar',
-        name: 'Bolívar',
-        ip: '10.10.109.1',
-        port: 443,
-        location: 'Cartagena'
-      },
-      {
-        id: 'caqueta',
-        name: 'Caquetá',
-        ip: '10.10.110.1',
-        port: 443,
-        location: 'Florencia'
-      },
-      {
-        id: 'tolima',
-        name: 'Tolima',
-        ip: '10.10.220.1',
-        port: 443,
-        location: 'Ibagué'
-      },
-      {
-        id: 'putumayo',
-        name: 'Putumayo',
-        ip: '10.10.112.1',
-        port: 443,
-        location: 'Mocoa'
-      },
-      {
-        id: 'huila',
-        name: 'Huila',
-        ip: '10.10.113.1',
-        port: 443,
-        location: 'Neiva'
-      },
-      {
-        id: 'meta',
-        name: 'Meta',
-        ip: '10.10.119.1',
-        port: 443,
-        location: 'Villavicencio'
-      },
-      {
-        id: 'atlantico',
-        name: 'Atlántico',
-        ip: '10.10.120.1',
-        port: 443,
-        location: 'Barranquilla'
-      }
-    ],
-    monitoring: {
-      updateInterval: 30000,
-      connectionTimeout: 5000,
-      latencyThresholds: {
-        good: 100,
-        warning: 300
-      }
-    }
-  };
+  console.error('❌ Error cargando configuración:', error.message);
+  process.exit(1);
 }
 
-// Función para verificar conectividad y latencia
-const checkConnection = (ip, port, timeout = serversConfig.monitoring?.connectionTimeout || 5000) => {
+// Almacenamiento en memoria para métricas históricas
+const metricsStorage = {
+  servers: {},
+  mpls: {}
+};
+
+// Inicializar almacenamiento para cada elemento
+config.servers.forEach(server => {
+  metricsStorage.servers[server.id] = [];
+});
+
+config.mpls.forEach(mpls => {
+  metricsStorage.mpls[mpls.id] = [];
+});
+
+// Función para almacenar métricas
+const storeMetrics = (type, id, data) => {
+  const storage = metricsStorage[type][id];
+  if (!storage) return;
+
+  const metric = {
+    timestamp: new Date().toISOString(),
+    status: data.status,
+    latency: data.latency,
+    error: data.error,
+    monitoringType: data.monitoringType || 'unknown'
+  };
+
+  if (type === 'servers' && data.services) {
+    metric.operationalServices = data.services.filter(s => s.status === 'green').length;
+    metric.servicesCount = data.services.length;
+  }
+
+  storage.push(metric);
+
+  if (storage.length > 1000) {
+    storage.splice(0, storage.length - 1000);
+  }
+};
+
+// Función para hacer ping real
+const pingServer = (ip, timeout = 3000) => {
+  return new Promise((resolve) => {
+    const startTime = performance.now();
+    const pingCommand = `ping -n 1 -w ${timeout} ${ip}`;
+    
+    exec(pingCommand, (error, stdout, stderr) => {
+      const latency = Math.round(performance.now() - startTime);
+      
+      if (error) {
+        resolve({
+          status: 'red',
+          latency: null,
+          error: 'Ping failed',
+          method: 'ping'
+        });
+        return;
+      }
+
+      const match = stdout.match(/tiempo[<=](\d+)ms/i) || stdout.match(/time[<=](\d+)ms/i);
+      const pingLatency = match ? parseInt(match[1]) : latency;
+
+      let status = 'green';
+      if (pingLatency > config.monitoring.latencyThresholds.warning) {
+        status = 'yellow';
+      } else if (pingLatency > config.monitoring.latencyThresholds.good) {
+        status = 'yellow';
+      }
+
+      resolve({
+        status,
+        latency: pingLatency,
+        error: null,
+        method: 'ping'
+      });
+    });
+  });
+};
+
+// Función para verificar conexión TCP
+const checkConnection = (ip, port, timeout = 3000) => {
   return new Promise((resolve) => {
     const startTime = performance.now();
     const socket = new net.Socket();
     
+    const onError = () => {
+      socket.destroy();
+      resolve({
+        status: 'red',
+        latency: null,
+        error: 'Connection failed',
+        method: 'tcp'
+      });
+    };
+
+    const onTimeout = () => {
+      socket.destroy();
+      resolve({
+        status: 'red',
+        latency: null,
+        error: 'Timeout',
+        method: 'tcp'
+      });
+    };
+
     socket.setTimeout(timeout);
-    
-    socket.on('connect', () => {
+    socket.on('timeout', onTimeout);
+    socket.on('error', onError);
+
+    socket.connect(port, ip, () => {
       const latency = Math.round(performance.now() - startTime);
       socket.destroy();
-      resolve({ 
-        status: 'connected', 
-        latency: latency,
-        statusCode: getStatusByLatency(latency)
+      
+      let status = 'green';
+      if (latency > config.monitoring.latencyThresholds.warning) {
+        status = 'yellow';
+      } else if (latency > config.monitoring.latencyThresholds.good) {
+        status = 'yellow';
+      }
+      
+      resolve({
+        status,
+        latency,
+        error: null,
+        method: 'tcp'
       });
     });
-    
-    socket.on('timeout', () => {
-      socket.destroy();
-      resolve({ 
-        status: 'timeout', 
-        latency: null,
-        statusCode: 'red'
-      });
-    });
-    
-    socket.on('error', () => {
-      socket.destroy();
-      resolve({ 
-        status: 'error', 
-        latency: null,
-        statusCode: 'red'
-      });
-    });
-    
-    socket.connect(port, ip);
   });
 };
 
-// Función para determinar el estado basado en la latencia
-const getStatusByLatency = (latency) => {
-  const thresholds = serversConfig.monitoring?.latencyThresholds || { good: 100, warning: 300 };
-  if (latency < thresholds.good) return 'green';
-  if (latency < thresholds.warning) return 'yellow';
-  return 'red';
+// Función para verificar estado de un servidor
+const checkServerStatus = async (server) => {
+  const serverStatus = {
+    id: server.id,
+    name: server.name,
+    ip: server.ip,
+    type: 'Servidor',
+    services: [],
+    status: 'green',
+    latency: 0,
+    timestamp: new Date().toISOString(),
+    monitoringType: 'unknown'
+  };
+
+  if (!server.services || server.services.length === 0) {
+    const result = await pingServer(server.ip, config.monitoring.connectionTimeout);
+    
+    serverStatus.status = result.status;
+    serverStatus.latency = result.latency;
+    serverStatus.monitoringType = 'ping';
+    serverStatus.error = result.error;
+    
+    storeMetrics('servers', server.id, serverStatus);
+    return serverStatus;
+  }
+
+  const serviceResults = await Promise.all(
+    server.services.map(async (service) => {
+      const result = await checkConnection(server.ip, service.port, config.monitoring.connectionTimeout);
+      return {
+        name: service.name,
+        port: service.port,
+        type: service.type,
+        status: result.status,
+        latency: result.latency,
+        error: result.error
+      };
+    })
+  );
+
+  serverStatus.services = serviceResults;
+  serverStatus.monitoringType = 'services';
+
+  const operationalServices = serviceResults.filter(s => s.status === 'green').length;
+  const warningServices = serviceResults.filter(s => s.status === 'yellow').length;
+  const errorServices = serviceResults.filter(s => s.status === 'red').length;
+
+  if (errorServices > 0) {
+    serverStatus.status = 'red';
+  } else if (warningServices > 0) {
+    serverStatus.status = 'yellow';
+  } else {
+    serverStatus.status = 'green';
+  }
+
+  const validLatencies = serviceResults.filter(s => s.latency !== null).map(s => s.latency);
+  serverStatus.latency = validLatencies.length > 0 
+    ? Math.round(validLatencies.reduce((a, b) => a + b, 0) / validLatencies.length)
+    : null;
+
+  storeMetrics('servers', server.id, serverStatus);
+  return serverStatus;
 };
 
-// Endpoint para obtener el estado de todos los servidores
+// Función para verificar estado de MPLS
+const checkMplsStatus = async (mpls) => {
+  const result = await checkConnection(mpls.ip, mpls.port, config.monitoring.connectionTimeout);
+  
+  const mplsStatus = {
+    id: mpls.id,
+    name: mpls.name,
+    ip: mpls.ip,
+    port: mpls.port,
+    location: mpls.location,
+    status: result.status,
+    latency: result.latency,
+    error: result.error,
+    timestamp: new Date().toISOString(),
+    monitoringType: 'tcp'
+  };
+
+  storeMetrics('mpls', mpls.id, mplsStatus);
+  return mplsStatus;
+};
+
+// Rutas API principales
 app.get('/api/servers/status', async (req, res) => {
   try {
-    const serversStatus = await Promise.all(
-      serversConfig.servers.map(async (server) => {
-        const servicesStatus = await Promise.all(
-          server.services.map(async (service) => {
-            const result = await checkConnection(server.ip, service.port);
-            
-            // Agregar métrica histórica para el servicio
-            addMetricToHistory('servers', `${server.id}-${service.name}`, {
-              latency: result.latency,
-              status: result.statusCode,
-              service: service.name
-            });
-            
-            return {
-              name: service.name,
-              type: service.type,
-              status: result.statusCode,
-              latency: result.latency
-            };
-          })
-        );
-        
-        // Determinar el estado general del servidor
-        const hasError = servicesStatus.some(s => s.status === 'red');
-        const hasWarning = servicesStatus.some(s => s.status === 'yellow');
-        
-        let overallStatus = 'green';
-        if (hasError) overallStatus = 'red';
-        else if (hasWarning) overallStatus = 'yellow';
-        
-        // Calcular latencia promedio
-        const validLatencies = servicesStatus.filter(s => s.latency !== null).map(s => s.latency);
-        const avgLatency = validLatencies.length > 0 
-          ? Math.round(validLatencies.reduce((a, b) => a + b, 0) / validLatencies.length)
-          : null;
-        
-        // Agregar métrica histórica para el servidor
-        addMetricToHistory('servers', server.id, {
-          latency: avgLatency,
-          status: overallStatus,
-          servicesCount: servicesStatus.length,
-          operationalServices: servicesStatus.filter(s => s.status === 'green').length
-        });
-        
-        return {
-          id: server.id,
-          name: server.name,
-          status: overallStatus,
-          latency: avgLatency,
-          type: 'Servidor',
-          services: servicesStatus
-        };
-      })
+    const results = await Promise.all(
+      config.servers.map(server => checkServerStatus(server))
     );
-    
-    res.json(serversStatus);
+    res.json(results);
   } catch (error) {
-    console.error('Error al verificar servidores:', error);
-    res.status(500).json({ error: 'Error al verificar servidores' });
+    console.error('❌ Error verificando servidores:', error.message);
+    res.status(500).json({ error: error.message });
   }
 });
 
-// Endpoint para obtener el estado de MPLS nacionales
 app.get('/api/mpls/status', async (req, res) => {
   try {
-    const mplsStatus = await Promise.all(
-      serversConfig.mpls.map(async (mpls) => {
-        const result = await checkConnection(mpls.ip, mpls.port);
-        
-        // Agregar métrica histórica para MPLS
-        addMetricToHistory('mpls', mpls.id, {
-          latency: result.latency,
-          status: result.statusCode,
-          location: mpls.location
-        });
-        
-        return {
-          id: mpls.id,
-          name: mpls.name,
-          status: result.statusCode,
-          latency: result.latency,
-          location: mpls.location
-        };
-      })
+    const results = await Promise.all(
+      config.mpls.map(mpls => checkMplsStatus(mpls))
     );
-    
-    res.json(mplsStatus);
+    res.json(results);
   } catch (error) {
-    console.error('Error al verificar MPLS:', error);
-    res.status(500).json({ error: 'Error al verificar MPLS' });
+    console.error('❌ Error verificando MPLS:', error.message);
+    res.status(500).json({ error: error.message });
   }
 });
 
-// Endpoint para obtener métricas históricas
+// Rutas para métricas
 app.get('/api/metrics/:type/:id', (req, res) => {
   try {
     const { type, id } = req.params;
     const { timeRange = '1h' } = req.query;
-    
-    if (!['servers', 'mpls'].includes(type)) {
-      return res.status(400).json({ error: 'Tipo inválido' });
+
+    if (!metricsStorage[type] || !metricsStorage[type][id]) {
+      return res.status(404).json({ error: 'Elemento no encontrado' });
     }
-    
-    const key = `${type}-${id}`;
-    const history = metricsHistory[type].get(key) || [];
-    
-    // Filtrar por rango de tiempo
-    let filteredHistory = history;
+
     const now = new Date();
-    
+    let startTime;
+
     switch (timeRange) {
       case '15m':
-        filteredHistory = history.filter(h => now - h.timestamp <= 15 * 60 * 1000);
+        startTime = new Date(now.getTime() - 15 * 60 * 1000);
         break;
       case '1h':
-        filteredHistory = history.filter(h => now - h.timestamp <= 60 * 60 * 1000);
+        startTime = new Date(now.getTime() - 60 * 60 * 1000);
         break;
       case '6h':
-        filteredHistory = history.filter(h => now - h.timestamp <= 6 * 60 * 60 * 1000);
+        startTime = new Date(now.getTime() - 6 * 60 * 60 * 1000);
         break;
       case '24h':
-        filteredHistory = history.filter(h => now - h.timestamp <= 24 * 60 * 60 * 1000);
+        startTime = new Date(now.getTime() - 24 * 60 * 60 * 1000);
         break;
+      default:
+        startTime = new Date(now.getTime() - 60 * 60 * 1000);
     }
-    
+
+    const metrics = metricsStorage[type][id].filter(metric => 
+      new Date(metric.timestamp) >= startTime
+    );
+
+    const validLatencies = metrics.filter(m => m.latency !== null).map(m => m.latency);
+    const uptime = metrics.length > 0 ? 
+      Math.round((metrics.filter(m => m.status === 'green').length / metrics.length) * 100) : 0;
+
+    const summary = {
+      avgLatency: validLatencies.length > 0 ? 
+        Math.round(validLatencies.reduce((a, b) => a + b, 0) / validLatencies.length) : 0,
+      maxLatency: validLatencies.length > 0 ? Math.max(...validLatencies) : 0,
+      minLatency: validLatencies.length > 0 ? Math.min(...validLatencies) : 0,
+      uptime: uptime,
+      totalPoints: metrics.length,
+      timeRange: timeRange
+    };
+
     res.json({
-      id,
-      type,
-      timeRange,
-      data: filteredHistory,
-      summary: {
-        totalPoints: filteredHistory.length,
-        avgLatency: filteredHistory.length > 0 
-          ? Math.round(filteredHistory.reduce((acc, curr) => acc + (curr.latency || 0), 0) / filteredHistory.length)
-          : 0,
-        maxLatency: filteredHistory.length > 0 
-          ? Math.max(...filteredHistory.map(h => h.latency || 0))
-          : 0,
-        minLatency: filteredHistory.length > 0 
-          ? Math.min(...filteredHistory.filter(h => h.latency !== null).map(h => h.latency))
-          : 0,
-        uptime: filteredHistory.length > 0 
-          ? Math.round((filteredHistory.filter(h => h.status === 'green').length / filteredHistory.length) * 100)
-          : 0
-      }
+      summary,
+      data: metrics.map(metric => ({
+        timestamp: metric.timestamp,
+        latency: metric.latency,
+        status: metric.status,
+        operationalServices: metric.operationalServices,
+        servicesCount: metric.servicesCount
+      }))
     });
+
   } catch (error) {
-    console.error('Error al obtener métricas:', error);
-    res.status(500).json({ error: 'Error al obtener métricas' });
+    console.error('❌ Error obteniendo métricas:', error.message);
+    res.status(500).json({ error: error.message });
   }
 });
 
-// Endpoint para obtener resumen de métricas de todos los elementos
 app.get('/api/metrics/summary', (req, res) => {
   try {
     const summary = {
-      servers: [],
-      mpls: []
+      servers: {},
+      mpls: {},
+      totalDataPoints: 0
     };
-    
-    // Resumen de servidores
-    serversConfig.servers.forEach(server => {
-      const key = `servers-${server.id}`;
-      const history = metricsHistory.servers.get(key) || [];
-      const recent = history.slice(-10); // Últimos 10 puntos
+
+    Object.keys(metricsStorage.servers).forEach(serverId => {
+      const metrics = metricsStorage.servers[serverId];
+      const recentMetrics = metrics.slice(-10);
       
-      summary.servers.push({
-        id: server.id,
-        name: server.name,
-        currentStatus: recent.length > 0 ? recent[recent.length - 1].status : 'unknown',
-        avgLatency: recent.length > 0 
-          ? Math.round(recent.reduce((acc, curr) => acc + (curr.latency || 0), 0) / recent.length)
-          : 0,
-        uptime: recent.length > 0 
-          ? Math.round((recent.filter(h => h.status === 'green').length / recent.length) * 100)
-          : 0
-      });
+      summary.servers[serverId] = {
+        totalPoints: metrics.length,
+        recentAvgLatency: recentMetrics.length > 0 ? 
+          Math.round(recentMetrics.filter(m => m.latency).reduce((a, b) => a + (b.latency || 0), 0) / recentMetrics.filter(m => m.latency).length) || 0 : 0,
+        currentStatus: recentMetrics.length > 0 ? recentMetrics[recentMetrics.length - 1].status : 'unknown'
+      };
+      summary.totalDataPoints += metrics.length;
     });
-    
-    // Resumen de MPLS
-    serversConfig.mpls.forEach(mpls => {
-      const key = `mpls-${mpls.id}`;
-      const history = metricsHistory.mpls.get(key) || [];
-      const recent = history.slice(-10);
+
+    Object.keys(metricsStorage.mpls).forEach(mplsId => {
+      const metrics = metricsStorage.mpls[mplsId];
+      const recentMetrics = metrics.slice(-10);
       
-      summary.mpls.push({
-        id: mpls.id,
-        name: mpls.name,
-        location: mpls.location,
-        currentStatus: recent.length > 0 ? recent[recent.length - 1].status : 'unknown',
-        avgLatency: recent.length > 0 
-          ? Math.round(recent.reduce((acc, curr) => acc + (curr.latency || 0), 0) / recent.length)
-          : 0,
-        uptime: recent.length > 0 
-          ? Math.round((recent.filter(h => h.status === 'green').length / recent.length) * 100)
-          : 0
-      });
+      summary.mpls[mplsId] = {
+        totalPoints: metrics.length,
+        recentAvgLatency: recentMetrics.length > 0 ? 
+          Math.round(recentMetrics.filter(m => m.latency).reduce((a, b) => a + (b.latency || 0), 0) / recentMetrics.filter(m => m.latency).length) || 0 : 0,
+        currentStatus: recentMetrics.length > 0 ? recentMetrics[recentMetrics.length - 1].status : 'unknown'
+      };
+      summary.totalDataPoints += metrics.length;
     });
-    
+
     res.json(summary);
   } catch (error) {
-    console.error('Error al obtener resumen de métricas:', error);
-    res.status(500).json({ error: 'Error al obtener resumen de métricas' });
+    console.error('❌ Error obteniendo resumen:', error.message);
+    res.status(500).json({ error: error.message });
   }
-});
-
-// Resto de endpoints...
-app.post('/api/config/servers', (req, res) => {
-  try {
-    serversConfig.servers = req.body;
-    res.json({ message: 'Configuración de servidores actualizada' });
-  } catch (error) {
-    res.status(500).json({ error: 'Error al actualizar configuración' });
-  }
-});
-
-app.post('/api/config/mpls', (req, res) => {
-  try {
-    serversConfig.mpls = req.body;
-    res.json({ message: 'Configuración de MPLS actualizada' });
-  } catch (error) {
-    res.status(500).json({ error: 'Error al actualizar configuración' });
-  }
-});
-
-app.get('/api/config', (req, res) => {
-  res.json(serversConfig);
 });
 
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+  const totalMetrics = Object.values(metricsStorage.servers).reduce((sum, arr) => sum + arr.length, 0) +
+                      Object.values(metricsStorage.mpls).reduce((sum, arr) => sum + arr.length, 0);
+
+  res.json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    config: {
+      servers: config.servers.length,
+      mpls: config.mpls.length,
+      updateInterval: config.monitoring.updateInterval,
+      connectionTimeout: config.monitoring.connectionTimeout
+    },
+    metrics: {
+      totalStored: totalMetrics,
+      serversWithMetrics: Object.keys(metricsStorage.servers).length,
+      mplsWithMetrics: Object.keys(metricsStorage.mpls).length
+    }
+  });
 });
 
+app.get('/api/config', (req, res) => {
+  res.json({
+    monitoring: config.monitoring,
+    serverCount: config.servers.length,
+    mplsCount: config.mpls.length
+  });
+});
+
+// Iniciar servidor
 app.listen(PORT, () => {
-  console.log(`Servidor backend ejecutándose en puerto ${PORT}`);
-  console.log(`API disponible en: http://localhost:${PORT}/api`);
-  console.log(`Servidores configurados: ${serversConfig.servers.length}`);
-  console.log(`MPLS configurados: ${serversConfig.mpls.length}`);
+  console.log(`🚀 Monitor ejecutándose en puerto ${PORT}`);
+  console.log(`📊 Métricas: http://localhost:${PORT}/api/health`);
 });
-
-module.exports = app;

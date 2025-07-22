@@ -1,7 +1,7 @@
 {
   "monitoring": {
-    "updateInterval": 30000,
-    "connectionTimeout": 5000,
+    "updateInterval": 5000,
+    "connectionTimeout": 3000,
     "latencyThresholds": {
       "good": 100,
       "warning": 300
@@ -12,23 +12,19 @@
       "id": "servidor-sap01",
       "name": "Servidor SAP 01",
       "ip": "10.238.83.82",
-      "services": [
-
-      ]
-    },{
+      "services": []
+    },
+    {
       "id": "servidor-sap02",
       "name": "Servidor SAP 02",
       "ip": "10.238.83.83",
-      "services": [
-
-      ]
-    },{
+      "services": []
+    },
+    {
       "id": "servidor-da",
       "name": "Servidor DA Liberty",
       "ip": "10.238.83.89",
-      "services": [
-        
-      ]
+      "services": []
     },
     {
       "id": "servidor-sap-hanna",
@@ -83,88 +79,102 @@
       "location": "Bogotá Sede 2"
     },
     {
-      "id": "santander",
-      "name": "Santander",
-      "ip": "10.10.103.1",
+       "id": "valle-del-cauca",
+      "name": "Funeraria Cali",
+      "ip": "10.10.116.1",
       "port": 443,
-      "location": "Bucaramanga"
+      "location": "Funeraria Cali"
     },
     {
       "id": "valle-del-cauca",
-      "name": "Valle del Cauca",
+      "name": "Cali",
       "ip": "10.10.104.1",
       "port": 443,
       "location": "Cali"
     },
     {
       "id": "antioquia",
-      "name": "Antioquia",
+      "name": "Medellín",
       "ip": "10.10.105.1",
       "port": 443,
       "location": "Medellín"
     },
     {
       "id": "narino",
-      "name": "Nariño",
+      "name": "Funeraria Pasto",
+      "ip": "10.10.115.1",
+      "port": 443,
+      "location": "Funeraria Pasto"
+    },
+    {
+      "id": "narino",
+      "name": "Pasto",
       "ip": "10.10.106.1",
       "port": 443,
       "location": "Pasto"
     },
     {
       "id": "risaralda",
-      "name": "Risaralda",
+      "name": "Pereira",
       "ip": "10.10.107.1",
       "port": 443,
       "location": "Pereira"
     },
     {
       "id": "bolivar",
-      "name": "Bolívar",
+      "name": "Cartagena",
       "ip": "10.10.109.1",
       "port": 443,
       "location": "Cartagena"
     },
     {
       "id": "caqueta",
-      "name": "Caquetá",
+      "name": "Florencia",
       "ip": "10.10.110.1",
       "port": 443,
       "location": "Florencia"
     },
     {
       "id": "tolima",
-      "name": "Tolima",
+      "name": "Ibagué",
       "ip": "10.10.220.1",
       "port": 443,
       "location": "Ibagué"
     },
     {
       "id": "putumayo",
-      "name": "Putumayo",
+      "name": "Mocoa",
       "ip": "10.10.112.1",
       "port": 443,
       "location": "Mocoa"
     },
     {
       "id": "huila",
-      "name": "Huila",
+      "name": "Neiva",
       "ip": "10.10.113.1",
       "port": 443,
       "location": "Neiva"
     },
     {
       "id": "meta",
-      "name": "Meta",
+      "name": "Villavicencio",
       "ip": "10.10.119.1",
       "port": 443,
       "location": "Villavicencio"
     },
     {
       "id": "atlantico",
-      "name": "Atlántico",
+      "name": "Barranquilla",
       "ip": "10.10.120.1",
       "port": 443,
       "location": "Barranquilla"
+    },
+    {
+      "id": "cesar",
+      "name": "Valledupar",
+      "ip": "10.10.150.1",
+      "port": 443,
+      "location": "Valledupar"
     }
   ]
 }

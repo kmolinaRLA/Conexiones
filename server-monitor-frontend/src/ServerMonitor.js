@@ -9,7 +9,6 @@ import {
 } from 'recharts';
 import Modal from 'react-modal';
 
-// Configurar modal
 Modal.setAppElement('#root');
 
 const StatusIndicator = ({ status, isUpdating = false, compact = false }) => {
@@ -121,7 +120,6 @@ const MetricsModal = ({ isOpen, onClose, elementId, elementType, elementName }) 
   useEffect(() => {
     if (isOpen && elementId) {
       fetchMetrics();
-      // Auto-actualizar métricas cada 10 segundos mientras el modal esté abierto
       const interval = setInterval(fetchMetrics, 10000);
       return () => clearInterval(interval);
     }
@@ -134,7 +132,7 @@ const MetricsModal = ({ isOpen, onClose, elementId, elementType, elementName }) 
       const data = await response.json();
       setMetrics(data);
     } catch (error) {
-      console.error('Error fetching metrics:', error);
+      console.error('Error obteniendo métricas:', error.message);
     }
     setLoading(false);
   };
@@ -155,7 +153,7 @@ const MetricsModal = ({ isOpen, onClose, elementId, elementType, elementName }) 
     >
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">Métricas Avanzadas</h2>
+          <h2 className="text-2xl font-bold text-gray-800">📊 Métricas Avanzadas</h2>
           <p className="text-gray-600">{elementName}</p>
         </div>
         <div className="flex items-center gap-4">
@@ -193,7 +191,6 @@ const MetricsModal = ({ isOpen, onClose, elementId, elementType, elementName }) 
         </div>
       ) : metrics ? (
         <div className="space-y-6">
-          {/* Resumen de métricas */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="bg-blue-50 p-4 rounded-lg border">
               <div className="flex items-center gap-2 mb-2">
@@ -228,18 +225,17 @@ const MetricsModal = ({ isOpen, onClose, elementId, elementType, elementName }) 
             </div>
           </div>
 
-          {/* Gráficos */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-white p-4 border rounded-lg">
               <MetricsChart 
                 data={metrics.data} 
                 type="latency" 
-                title="Latencia en el Tiempo"
+                title="📈 Latencia en el Tiempo"
               />
             </div>
             
             <div className="bg-white p-4 border rounded-lg">
-              <h4 className="text-sm font-medium text-gray-700 mb-2">Estado de Conexión</h4>
+              <h4 className="text-sm font-medium text-gray-700 mb-2">🔄 Estado de Conexión</h4>
               <ResponsiveContainer width="100%" height={240}>
                 <BarChart data={metrics.data.slice(-20)}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -261,10 +257,9 @@ const MetricsModal = ({ isOpen, onClose, elementId, elementType, elementName }) 
             </div>
           </div>
 
-          {/* Tabla de datos recientes */}
           <div className="bg-white border rounded-lg overflow-hidden">
             <h4 className="text-lg font-medium text-gray-800 p-4 border-b bg-gray-50">
-              Datos Recientes
+              📋 Datos Recientes
             </h4>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -288,7 +283,9 @@ const MetricsModal = ({ isOpen, onClose, elementId, elementType, elementName }) 
                       <td className="px-4 py-3">{point.latency ? `${point.latency}ms` : 'N/A'}</td>
                       {elementType === 'servers' && (
                         <td className="px-4 py-3">
-                          {point.operationalServices}/{point.servicesCount} operativos
+                          {point.operationalServices !== undefined ? 
+                            `${point.operationalServices}/${point.servicesCount} operativos` : 
+                            'Ping directo'}
                         </td>
                       )}
                     </tr>
@@ -340,9 +337,32 @@ const ServerCard = ({ server, isUpdating = false }) => {
     setIsExpanded(!isExpanded);
   };
 
+  const getMonitoringInfo = () => {
+    if (server.monitoringType === 'ping') {
+      return {
+        type: 'Ping del Servidor',
+        icon: '🏓',
+        description: 'Latencia medida por ping ICMP'
+      };
+    } else if (server.monitoringType === 'services') {
+      return {
+        type: 'Servicios TCP',
+        icon: '🔌',
+        description: 'Latencia medida por conexiones TCP'
+      };
+    } else {
+      return {
+        type: 'Verificando...',
+        icon: '⏳',
+        description: 'Determinando método de monitoreo'
+      };
+    }
+  };
+
+  const monitoringInfo = getMonitoringInfo();
+
   return (
     <div className={`bg-white rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition-all duration-300 ${isUpdating ? 'ring-2 ring-blue-300 ring-opacity-50' : ''} overflow-hidden`}>
-      {/* Header del servidor */}
       <div className="p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
@@ -361,14 +381,20 @@ const ServerCard = ({ server, isUpdating = false }) => {
           <div className="flex items-center gap-2 text-gray-600">
             <Activity className="w-4 h-4" />
             <span className="text-sm">
-              {server.latency ? `${server.latency}ms promedio` : 'Midiendo latencia...'}
+              {server.latency ? `${server.latency}ms` : 'Midiendo latencia...'}
             </span>
           </div>
+          
           <div className="flex items-center gap-2 text-gray-600">
-            <Server className="w-4 h-4" />
-            <span className="text-sm">{server.type}</span>
+            <span className="text-sm">{monitoringInfo.icon}</span>
+            <span className="text-sm font-medium">{monitoringInfo.type}</span>
           </div>
-          {server.services && (
+          
+          <div className="flex items-center gap-2 text-gray-500">
+            <span className="text-xs">{monitoringInfo.description}</span>
+          </div>
+          
+          {server.services && server.services.length > 0 && (
             <div className="flex items-center gap-2 text-gray-600">
               <span className="text-sm font-medium">
                 {server.services.length} servicio{server.services.length !== 1 ? 's' : ''} monitoreado{server.services.length !== 1 ? 's' : ''}
@@ -377,15 +403,17 @@ const ServerCard = ({ server, isUpdating = false }) => {
           )}
         </div>
 
-        {/* Botones de acción */}
         <div className="flex gap-2">
-          <button
-            onClick={toggleExpanded}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium border border-gray-300"
-          >
-            {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-            {isExpanded ? 'Ocultar' : 'Ver'} Servicios
-          </button>
+          {server.services && server.services.length > 0 && (
+            <button
+              onClick={toggleExpanded}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium border border-gray-300"
+            >
+              {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+              {isExpanded ? 'Ocultar' : 'Ver'} Servicios
+            </button>
+          )}
+          
           <button
             onClick={() => setShowMetrics(true)}
             className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium border border-blue-300"
@@ -393,11 +421,17 @@ const ServerCard = ({ server, isUpdating = false }) => {
             <BarChart3 className="w-4 h-4" />
             Métricas
           </button>
+          
+          {server.monitoringType === 'ping' && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-green-50 text-green-700 rounded-lg text-sm border border-green-200">
+              <span>🏓</span>
+              <span>Solo Ping</span>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Lista de servicios expandible */}
-      {isExpanded && server.services && (
+      {isExpanded && server.services && server.services.length > 0 && (
         <div className="px-6 pb-6 border-t border-gray-100 bg-gray-50">
           <div className="pt-4">
             <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
@@ -413,7 +447,6 @@ const ServerCard = ({ server, isUpdating = false }) => {
         </div>
       )}
 
-      {/* Modal de métricas */}
       <MetricsModal
         isOpen={showMetrics}
         onClose={() => setShowMetrics(false)}
@@ -464,7 +497,6 @@ const MplsCard = ({ mpls, isUpdating = false }) => {
         Ver Métricas
       </button>
 
-      {/* Modal de métricas */}
       <MetricsModal
         isOpen={showMetrics}
         onClose={() => setShowMetrics(false)}
@@ -489,28 +521,6 @@ const TabButton = ({ active, onClick, children, icon: Icon }) => (
     {children}
   </button>
 );
-
-const AutoUpdateIndicator = ({ nextUpdate, isUpdating }) => {
-  const [countdown, setCountdown] = useState(10);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const remaining = Math.ceil((nextUpdate - Date.now()) / 1000);
-      setCountdown(Math.max(0, remaining));
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [nextUpdate]);
-
-  return (
-    <div className="flex items-center gap-2 text-sm text-gray-600 bg-white px-3 py-1 rounded-lg border border-gray-300 shadow-sm">
-      <div className={`w-2 h-2 rounded-full ${isUpdating ? 'bg-blue-500 animate-pulse' : 'bg-green-500'}`}></div>
-      <span>
-        {isUpdating ? 'Actualizando...' : `Próxima actualización en ${countdown}s`}
-      </span>
-    </div>
-  );
-};
 
 const StatusSummaryCard = ({ title, value, color, isUpdating }) => {
   const getColorClasses = () => {
@@ -556,7 +566,6 @@ const ServerMonitor = () => {
   const [lastUpdate, setLastUpdate] = useState(new Date());
   const [activeTab, setActiveTab] = useState('servers');
   const [isUpdating, setIsUpdating] = useState(false);
-  const [nextUpdate, setNextUpdate] = useState(Date.now() + 10000);
 
   const fetchServerStatus = async (silent = false) => {
     try {
@@ -567,22 +576,10 @@ const ServerMonitor = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      console.log('✅ Servidores actualizados:', data.length);
       
-      // Actualización suave - mantener estado expandido
-      setServers(prevServers => {
-        return data.map(newServer => {
-          const prevServer = prevServers.find(p => p.id === newServer.id);
-          return {
-            ...newServer,
-            // Mantener cualquier estado local si es necesario
-          };
-        });
-      });
-      
+      setServers(data);
       setError(null);
     } catch (error) {
-      console.error('❌ Error fetching server status:', error);
       if (!silent) {
         setError('No se pudo conectar con el servidor backend: ' + error.message);
       }
@@ -598,12 +595,10 @@ const ServerMonitor = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      console.log('✅ MPLS actualizados:', data.length);
       
       setMplsConnections(data);
       setError(null);
     } catch (error) {
-      console.error('❌ Error fetching MPLS status:', error);
       if (!silent) {
         setError('No se pudo conectar con el servidor backend: ' + error.message);
       }
@@ -620,7 +615,6 @@ const ServerMonitor = () => {
     ]);
     
     setLastUpdate(new Date());
-    setNextUpdate(Date.now() + 10000);
     if (!silent) setIsUpdating(false);
   };
 
@@ -629,7 +623,6 @@ const ServerMonitor = () => {
   };
 
   useEffect(() => {
-    // Carga inicial
     const initialLoad = async () => {
       setIsLoading(true);
       await refreshData(false);
@@ -638,9 +631,8 @@ const ServerMonitor = () => {
 
     initialLoad();
 
-    // Configurar actualización automática cada 10 segundos
     const interval = setInterval(() => {
-      refreshData(true); // silent = true para actualizaciones automáticas
+      refreshData(true);
     }, 10000);
 
     return () => clearInterval(interval);
@@ -693,16 +685,14 @@ const ServerMonitor = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold text-gray-800 mb-3">
-            Monitor de Infraestructura La Ascension
+            📊 Monitor de Infraestructura Corporativa
           </h1>
           <div className="flex items-center justify-center gap-6 flex-wrap">
             <p className="text-gray-600 bg-white px-3 py-1 rounded-lg border border-gray-300 shadow-sm">
               Última actualización: {lastUpdate.toLocaleTimeString()}
             </p>
-            <AutoUpdateIndicator nextUpdate={nextUpdate} isUpdating={isUpdating} />
             <button 
               onClick={handleManualRefresh}
               disabled={isUpdating}
@@ -714,7 +704,6 @@ const ServerMonitor = () => {
           </div>
         </div>
 
-        {/* Error banner (no bloquea la interfaz) */}
         {error && (
           <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg shadow-sm">
             <div className="flex items-center gap-2">
@@ -724,7 +713,6 @@ const ServerMonitor = () => {
           </div>
         )}
 
-        {/* Tabs Navigation */}
         <div className="mb-8">
           <div className="flex justify-center gap-4">
             <TabButton
@@ -744,7 +732,6 @@ const ServerMonitor = () => {
           </div>
         </div>
 
-        {/* Status Summary */}
         <div className="mb-8">
           {activeTab === 'servers' && (
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -765,7 +752,6 @@ const ServerMonitor = () => {
           )}
         </div>
 
-        {/* Content based on active tab */}
         {activeTab === 'servers' && (
           <div>
             <h2 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center gap-2">

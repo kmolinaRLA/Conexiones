@@ -3,248 +3,427 @@
 ![Monitor de Servidores](https://img.shields.io/badge/Status-Operational-green)
 ![React](https://img.shields.io/badge/React-18+-blue)
 ![Node.js](https://img.shields.io/badge/Node.js-16+-green)
+![Actualización](https://img.shields.io/badge/Actualización-5s-orange)
 
-Sistema de monitoreo en tiempo real para servidores corporativos y conexiones MPLS nacionales. Permite validar el estado de conectividad, latencia y disponibilidad de servicios críticos.
+Sistema de monitoreo en tiempo real para servidores corporativos y conexiones MPLS nacionales. Permite validar el estado de conectividad, latencia y disponibilidad de servicios críticos con métricas avanzadas tipo Grafana.
 
-## 🚀 Características
+## 🚀 Características Principales
 
-- **Monitoreo en Tiempo Real**: Actualización automática cada 30 segundos
-- **Dashboard Intuitivo**: Interfaz moderna con indicadores visuales de estado
-- **Servidores y Servicios**: Monitoreo de múltiples servicios por servidor
-- **MPLS Nacionales**: Seguimiento de conexiones MPLS por departamento
-- **Indicadores de Latencia**: 
+- **⚡ Monitoreo Ultra-Rápido**: Actualización automática cada 5 segundos
+- **📊 Métricas Avanzadas**: Gráficos históricos tipo Grafana con análisis temporal
+- **🖥️ Dashboard Intuitivo**: Interfaz moderna con indicadores visuales de estado
+- **🔧 Monitoreo Flexible**: 
+  - **Ping ICMP**: Para servidores sin servicios específicos
+  - **TCP Socket**: Para servicios específicos por puerto
+- **🌐 MPLS Nacionales**: Seguimiento de conexiones por departamento
+- **📈 Análisis Temporal**: Rangos de 15m, 1h, 6h, 24h
+- **🎯 Indicadores de Latencia**: 
   - 🟢 Verde: < 100ms (Óptimo)
   - 🟡 Amarillo: 100-300ms (Latencia Alta)
   - 🔴 Rojo: > 300ms o Sin conexión
-- **API RESTful**: Backend robusto con endpoints para configuración
+- **💾 Almacenamiento Histórico**: Hasta 1000 métricas por elemento
 
-## 🏗️ Arquitectura
+## 🏗️ Arquitectura del Sistema
 
 ```
 Conexiones/
 ├── server-monitor-backend/     # API Node.js + Express
-│   ├── index.js               # Servidor principal
+│   ├── index.js               # Servidor principal con métricas
 │   └── package.json           # Dependencias backend
 ├── server-monitor-frontend/    # Frontend React
 │   ├── src/
-│   │   ├── ServerMonitor.js   # Componente principal
-│   │   └── App.js             # Aplicación React
+│   │   ├── ServerMonitor.js   # Componente principal con gráficos
+│   │   ├── App.js             # Aplicación React
+│   │   └── index.css          # Estilos Tailwind
 │   └── package.json           # Dependencias frontend
-└── package.json               # Scripts principales
+├── config.json                # ⚙️ Configuración central
+├── package.json               # Scripts principales
+└── README.md                  # Este archivo
 ```
 
 ## 📋 Requisitos Previos
 
-- **Node.js**: v16.0.0 o superior
-- **npm**: v7.0.0 o superior
-- **Puerto 3000**: Para el frontend (React)
-- **Puerto 3001**: Para el backend (API)
+### Sistema Operativo
+- **Windows 10/11** (recomendado)
+- **Linux/macOS** (compatible)
 
-## 🛠️ Instalación
+### Software Requerido
 
-### Instalación Automática (Recomendada)
+1. **Node.js** (v16.0.0 o superior)
+   - Descargar desde: https://nodejs.org/
+   - Verificar instalación: `node --version`
+   - Debe mostrar algo como: `v18.17.0`
+
+2. **npm** (incluido con Node.js)
+   - Verificar: `npm --version`
+   - Debe mostrar algo como: `9.6.7`
+
+3. **Git** (opcional, para clonar)
+   - Descargar desde: https://git-scm.com/
+
+### Puertos Requeridos
+- **Puerto 3000**: Frontend React
+- **Puerto 3001**: Backend API
+- **Acceso de red**: Para hacer ping y conexiones TCP
+
+## 📦 Instalación Completa
+
+### Opción 1: Instalación Automática (Recomendada)
 
 ```bash
-# Clonar el repositorio
-git clone <repository-url>
+# 1. Clonar o descargar el proyecto
+git clone https://github.com/tu-repo/Conexiones.git
+# O descargar ZIP y extraer
+
+# 2. Navegar al directorio
 cd Conexiones
 
-# Instalar todas las dependencias
+# 3. Instalación automática de TODO
 npm run install:all
-```
 
-### Instalación Manual
-
-```bash
-# Instalar dependencias del proyecto principal
-npm install
-
-# Instalar dependencias del backend
-cd server-monitor-backend
-npm install
-
-# Instalar dependencias del frontend
-cd ../server-monitor-frontend
-npm install
-```
-
-## 🚀 Ejecución
-
-### Inicio Completo del Sistema
-
-```bash
-# Desde la carpeta raíz - Inicia frontend y backend simultáneamente
+# 4. Iniciar el sistema completo
 npm start
 ```
 
-### Inicio Individual
+### Opción 2: Instalación Manual Paso a Paso
 
+```bash
+# 1. Instalar dependencias principales
+npm install
+
+# 2. Instalar dependencias del backend
+cd server-monitor-backend
+npm install
+
+# 3. Regresar y instalar frontend
+cd ..
+cd server-monitor-frontend
+npm install
+
+# 4. Regresar al directorio raíz
+cd ..
+
+# 5. Iniciar el sistema
+npm start
+```
+
+### Opción 3: Instalación Sin Git
+
+1. **Descargar** el proyecto como ZIP
+2. **Extraer** en el directorio deseado
+3. **Abrir terminal** en la carpeta extraída
+4. **Ejecutar** los comandos de instalación manual
+
+## 🚀 Ejecución del Sistema
+
+### Inicio Completo (Recomendado)
+```bash
+# Desde la carpeta raíz - Inicia frontend y backend automáticamente
+npm start
+```
+
+Esto abrirá:
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:3001
+
+### Inicio Individual
 ```bash
 # Solo Backend (Puerto 3001)
 npm run start:backend
 
-# Solo Frontend (Puerto 3000)
+# Solo Frontend (Puerto 3000) 
 npm run start:frontend
 ```
 
-### Usando VS Code Tasks
+### Verificación de Funcionamiento
 
-También puedes usar la tarea predefinida en VS Code:
-- Abrir Command Palette (`Ctrl+Shift+P`)
-- Buscar "Tasks: Run Task"
-- Seleccionar "Start Backend Server"
+1. **Abrir navegador** en http://localhost:3000
+2. **Verificar estado** del API: http://localhost:3001/api/health
+3. **Comprobar** que aparecen servidores y MPLS
 
-## 📡 API Endpoints
+## ⚙️ Configuración Personalizada
 
-### Monitoreo
-- `GET /api/servers/status` - Estado de todos los servidores
-- `GET /api/mpls/status` - Estado de conexiones MPLS
-- `GET /api/health` - Estado del API
+### Archivo de Configuración Principal
 
-### Configuración
-- `GET /api/config` - Obtener configuración actual
-- `POST /api/config/servers` - Actualizar servidores
-- `POST /api/config/mpls` - Actualizar configuración MPLS
+Edita `config.json` para personalizar:
 
-## ⚙️ Configuración
-
-### Servidores
-
-Edita el archivo `server-monitor-backend/index.js` para configurar los servidores a monitorear:
-
-```javascript
-let serversConfig = {
-  servers: [
-    {
-      id: 'server1',
-      name: 'Servidor Principal',
-      ip: '192.168.1.100',
-      services: [
-        { name: 'Web Server', port: 80, type: 'HTTP' },
-        { name: 'Database', port: 3306, type: 'MySQL' },
-        { name: 'SSH', port: 22, type: 'SSH' }
-      ]
+```json
+{
+  "monitoring": {
+    "updateInterval": 5000,      // Actualización cada 5 segundos
+    "connectionTimeout": 3000,   // Timeout de 3 segundos
+    "latencyThresholds": {
+      "good": 100,              // Verde < 100ms
+      "warning": 300            // Amarillo > 300ms
     }
-    // ... más servidores
+  },
+  "servers": [
+    {
+      "id": "mi-servidor",
+      "name": "Mi Servidor Web",
+      "ip": "192.168.1.100",
+      "services": [
+        { "name": "Web", "port": 80, "type": "HTTP" },
+        { "name": "HTTPS", "port": 443, "type": "HTTPS" }
+      ]
+    },
+    {
+      "id": "servidor-ping",
+      "name": "Servidor Solo Ping",
+      "ip": "192.168.1.200",
+      "services": []              // Solo ping ICMP
+    }
+  ],
+  "mpls": [
+    {
+      "id": "mi-sucursal",
+      "name": "Mi Sucursal",
+      "ip": "10.1.1.1",
+      "port": 443,
+      "location": "Ciudad"
+    }
   ]
-};
+}
 ```
 
-### MPLS
+### Tipos de Monitoreo
 
-```javascript
-mpls: [
-  {
-    id: 'antioquia',
-    name: 'Antioquia',
-    ip: '10.1.1.1',
-    port: 443,
-    location: 'Medellín'
-  }
-  // ... más conexiones MPLS
-]
+**🏓 Solo Ping** (services: [])
+- Usa ping ICMP nativo del sistema
+- Más rápido y menos intrusivo
+- Ideal para servidores sin servicios específicos
+
+**🔌 Servicios TCP** (services: [...])
+- Verifica conexión a puertos específicos
+- Monitoreo detallado por servicio
+- Ideal para aplicaciones y bases de datos
+
+## 📡 API Endpoints Disponibles
+
+### Monitoreo Principal
+```bash
+GET /api/servers/status    # Estado de todos los servidores
+GET /api/mpls/status       # Estado de conexiones MPLS
+GET /api/health           # Estado del sistema
+```
+
+### Métricas Avanzadas
+```bash
+GET /api/metrics/servers/{id}?timeRange=1h    # Métricas de servidor
+GET /api/metrics/mpls/{id}?timeRange=6h       # Métricas de MPLS
+GET /api/metrics/summary                      # Resumen general
+```
+
+### Configuración
+```bash
+GET /api/config           # Configuración actual
 ```
 
 ## 🎨 Tecnologías Utilizadas
 
 ### Frontend
-- **React 19**: Framework principal
-- **Tailwind CSS**: Estilos y diseño
-- **Lucide React**: Iconografía
-- **PostCSS**: Procesamiento CSS
+- **React 18**: Framework principal
+- **Tailwind CSS**: Diseño y estilos
+- **Recharts**: Gráficos y métricas
+- **Lucide React**: Iconografía moderna
+- **React Modal**: Ventanas modales
 
-### Backend
+### Backend  
 - **Node.js**: Runtime de JavaScript
-- **Express.js**: Framework web
-- **CORS**: Manejo de políticas de origen cruzado
-- **Net**: Módulo nativo para testing de conectividad
+- **Express.js**: Framework web robusto
+- **Net**: Testing de conectividad TCP
+- **Child Process**: Ejecución de ping nativo
+- **CORS**: Políticas de origen cruzado
 
-## 🔧 Desarrollo
-
-### Estructura del Proyecto
-
-- `/server-monitor-backend/`: API y lógica de monitoreo
-- `/server-monitor-frontend/`: Interfaz de usuario React
-- `/public/`: Archivos estáticos
-- `/src/`: Código fuente de React
-
-### Scripts Disponibles
+## 🔧 Scripts Disponibles
 
 ```bash
-npm run start          # Inicia frontend y backend
-npm run start:backend  # Solo backend
-npm run start:frontend # Solo frontend
-npm run install:all    # Instala todas las dependencias
-npm run build         # Construye el frontend para producción
+# Instalación
+npm run install:all       # Instala todas las dependencias
+
+# Ejecución
+npm start                 # Inicia frontend y backend
+npm run start:backend     # Solo backend (puerto 3001)
+npm run start:frontend    # Solo frontend (puerto 3000)
+
+# Desarrollo
+npm run build            # Construye para producción
+npm test                 # Ejecuta pruebas
 ```
 
 ## 🐛 Resolución de Problemas
 
-### Error de Conexión Backend
-```
-Error: No se pudo conectar con el servidor backend
-```
-**Solución**: Verificar que el backend esté ejecutándose en puerto 3001
+### ❌ Error: "No se pudo conectar con el servidor backend"
 
-### Puerto en Uso
+**Causa**: El backend no está ejecutándose
+```bash
+# Solución
+cd server-monitor-backend
+npm start
+# O desde la raíz:
+npm run start:backend
 ```
-Error: EADDRINUSE
-```
-**Solución**: Liberar los puertos 3000 y 3001 o cambiar la configuración
 
-### Dependencias
-```
-Module not found
-```
-**Solución**: Ejecutar `npm run install:all`
+### ❌ Error: "EADDRINUSE: Puerto en uso"
 
-## 📊 Estados de Monitoreo
+**Causa**: Los puertos 3000 o 3001 están ocupados
+```bash
+# Windows - Liberar puerto
+netstat -ano | findstr :3000
+taskkill /PID [número] /F
 
+# Linux/Mac - Liberar puerto
+lsof -ti:3000 | xargs kill -9
+```
+
+### ❌ Error: "Module not found"
+
+**Causa**: Dependencias no instaladas
+```bash
+# Solución
+npm run install:all
+```
+
+### ❌ Error: "ping: comando no encontrado"
+
+**Causa**: Sistema sin ping nativo (muy raro)
+- **Windows**: Viene preinstalado
+- **Linux**: `sudo apt install iputils-ping`
+- **Mac**: Viene preinstalado
+
+### ❌ Error de permisos de red
+
+**Causa**: Firewall o políticas corporativas
+- **Configurar firewall** para permitir puertos 3000, 3001
+- **Ejecutar como administrador** si es necesario
+- **Verificar políticas** de red corporativa
+
+## 📊 Estados y Métricas
+
+### Estados de Conexión
 | Estado | Color | Condición | Descripción |
 |--------|-------|-----------|-------------|
 | Operativo | 🟢 Verde | Latencia < 100ms | Conexión óptima |
-| Latencia Alta | 🟡 Amarillo | 100ms ≤ Latencia < 300ms | Conexión lenta |
-| Sin Conexión | 🔴 Rojo | Latencia ≥ 300ms o Error | Problemas de conectividad |
+| Latencia Alta | 🟡 Amarillo | 100-300ms | Conexión lenta |
+| Sin Conexión | 🔴 Rojo | > 300ms o Error | Fallo de conectividad |
 
-## 🔄 Actualización Automática
+### Métricas Disponibles
+- **📈 Latencia en tiempo real**: Gráficos de líneas
+- **📊 Disponibilidad**: Porcentaje de uptime  
+- **⏱️ Latencia promedio, máxima, mínima**
+- **🔄 Historial de estados**: Últimos cambios
+- **📋 Tabla de datos**: Registros detallados
 
-El sistema actualiza automáticamente cada 30 segundos. También incluye:
-- Botón de actualización manual
-- Indicador de última actualización
-- Manejo de errores de conectividad
-- Estado de carga visual
+### Rangos Temporales
+- **15 minutos**: Monitoreo inmediato
+- **1 hora**: Seguimiento detallado
+- **6 horas**: Análisis de tendencias
+- **24 horas**: Vista panorámica diaria
 
-## 📝 Logs y Monitoreo
+## 🚀 Despliegue en Producción
 
-Los logs se muestran en la consola del navegador y del servidor:
-
+### 1. Preparación
 ```bash
-# Backend logs
-Servidor backend ejecutándose en puerto 3001
-API disponible en: http://localhost:3001/api
+# Construir frontend optimizado
+cd server-monitor-frontend
+npm run build
 
-# Frontend logs (DevTools)
-Error fetching server status: [error details]
+# Volver al directorio raíz
+cd ..
 ```
 
-## 🤝 Contribución
+### 2. Variables de Entorno
+```bash
+# Archivo .env
+NODE_ENV=production
+PORT=3001
+FRONTEND_PORT=3000
+```
 
-1. Fork el proyecto
-2. Crear rama feature (`git checkout -b feature/nueva-funcionalidad`)
-3. Commit cambios (`git commit -am 'Agregar nueva funcionalidad'`)
-4. Push a la rama (`git push origin feature/nueva-funcionalidad`)
-5. Crear Pull Request
+### 3. Proceso Daemon (Linux)
+```bash
+# Con PM2
+npm install -g pm2
+pm2 start ecosystem.config.js
+pm2 save
+pm2 startup
+```
+
+### 4. Servicio Windows
+- Usar **node-windows** para crear servicio
+- O ejecutar en **Task Scheduler**
+
+## 📁 Estructura de Archivos Completa
+
+```
+Conexiones/
+├── 📁 server-monitor-backend/
+│   ├── 📄 index.js              # Servidor principal con métricas
+│   ├── 📄 package.json          # Dependencias backend
+│   └── 📄 package-lock.json     # Lock de versiones
+├── 📁 server-monitor-frontend/
+│   ├── 📁 src/
+│   │   ├── 📄 ServerMonitor.js  # Componente principal
+│   │   ├── 📄 App.js            # App React
+│   │   ├── 📄 index.js          # Entry point
+│   │   └── 📄 index.css         # Estilos Tailwind
+│   ├── 📁 public/
+│   │   ├── 📄 index.html        # Template HTML
+│   │   └── 📄 favicon.ico       # Icono
+│   ├── 📄 package.json          # Dependencias frontend
+│   ├── 📄 tailwind.config.js    # Config Tailwind
+│   └── 📄 package-lock.json     # Lock de versiones
+├── ⚙️ config.json               # Configuración central
+├── 📄 package.json              # Scripts principales
+├── 📄 README.md                 # Esta documentación
+└── 📄 .gitignore               # Archivos ignorados
+```
+
+## 🤝 Soporte y Contribución
+
+### Reportar Problemas
+1. **Verificar** que el problema persiste después de reiniciar
+2. **Revisar** los logs de consola (F12 en navegador)
+3. **Crear issue** con información detallada:
+   - Sistema operativo
+   - Versión de Node.js
+   - Mensaje de error completo
+   - Pasos para reproducir
+
+### Contribuir
+1. **Fork** el proyecto
+2. **Crear rama**: `git checkout -b feature/nueva-funcionalidad`
+3. **Hacer cambios** y commit: `git commit -am 'Descripción'`
+4. **Push**: `git push origin feature/nueva-funcionalidad`
+5. **Pull Request** con descripción detallada
+
+## 📋 Checklist de Instalación
+
+- [ ] Node.js v16+ instalado
+- [ ] npm funcionando correctamente
+- [ ] Proyecto descargado/clonado
+- [ ] `npm run install:all` ejecutado sin errores
+- [ ] `npm start` inicia ambos servicios
+- [ ] http://localhost:3000 muestra la interfaz
+- [ ] http://localhost:3001/api/health responde OK
+- [ ] config.json configurado según necesidades
+- [ ] Firewall configurado para puertos 3000, 3001
 
 ## 📄 Licencia
 
-Este proyecto está bajo la Licencia ISC. Ver archivo `LICENSE` para más detalles.
+Este proyecto está bajo la **Licencia ISC**. Libre para uso comercial y personal.
 
-## 👥 Soporte
+## 🏆 Características Avanzadas
 
-Para soporte técnico o reportar problemas:
-- Crear un issue en el repositorio
-- Contactar al equipo de desarrollo
+- **🔄 Auto-actualización**: Sin intervención manual
+- **📱 Responsive**: Funciona en móviles y tablets  
+- **⚡ Optimizado**: Carga rápida y eficiente
+- **🛡️ Robusto**: Manejo de errores y reconexión
+- **📊 Escalable**: Fácil agregar nuevos servidores
+- **🎨 Profesional**: Diseño corporativo moderno
 
 ---
 
-**Desarrollado con ❤️ para el monitoreo de infraestructura corporativa**
+**🚀 Desarrollado con ❤️ para el monitoreo profesional de infraestructura corporativa**
+
+**📞 ¿Necesitas ayuda?** Crea un issue o contacta al equipo de desarrollo.
